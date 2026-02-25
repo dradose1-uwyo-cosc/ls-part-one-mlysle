@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	var writer io.Writer
+	flag.Parse()
+	var writer io.Writer = os.Stdout
 	args := flag.Args()
 	useColor := functions.IsTerminal(os.Stdout)
 
