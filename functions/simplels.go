@@ -4,23 +4,45 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
 func SimpleLS(w io.Writer, args []string, useColor bool) {
+	// Separate arguments into files and dirs
+	// Sorting is handled by Partition()
 	files, dirs := Partition(args)
 
+	// Print filenames
 	for _, file := range files {
 		w.Write([]byte(file + "\n"))
 	}
 
-	for _, dir := range dirs {
-		contents, err := os.ReadDir(dir)
+	if len(dirs) > 0 {
+		w.Write([]byte("\n"))
+	}
+
+	multipleDirs := len(dirs) > 1
+
+	// Print dirs and their contents
+	for dirnum, dir := range dirs {
+		tgts, err := os.ReadDir(dir)
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Fprintf: %v\n", err)
 			continue
 		}
-		contents = dirFilter(contents)
+
+		if multipleDirs {
+			w.Write([]byte(filepath.Base(dir) + ":\n"))
+		}
+
+		for _, tgt := range dirFilter(tgts) {
+			w.Write([]byte(tgt.Name() + "\n"))
+		}
+		if dirnum < len(dirs)-1 {
+			w.Write([]byte("\n"))
+		}
 	}
 }
 
