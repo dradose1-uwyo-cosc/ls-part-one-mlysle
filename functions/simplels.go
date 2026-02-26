@@ -15,7 +15,12 @@ func SimpleLS(w io.Writer, args []string, useColor bool) {
 
 	// Print filenames
 	for _, file := range files {
-		w.Write([]byte(file + "\n"))
+		info, err := os.Lstat(file)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Fprintf: %v\n", err)
+			continue
+		}
+		printTarget(w, useColor, info)
 	}
 
 	if len(dirs) > 0 {
@@ -34,14 +39,20 @@ func SimpleLS(w io.Writer, args []string, useColor bool) {
 		}
 
 		if multipleDirs {
-			w.Write([]byte(filepath.Base(dir) + ":\n"))
+			io.WriteString(w, filepath.Base(dir)+":\n")
 		}
 
 		for _, tgt := range dirFilter(tgts) {
-			w.Write([]byte(tgt.Name() + "\n"))
+			info, err := tgt.Info()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Fprintf: %v\n", err)
+				continue
+			}
+			printTarget(w, useColor, info)
 		}
+
 		if dirnum < len(dirs)-1 {
-			w.Write([]byte("\n"))
+			io.WriteString(w, "\n")
 		}
 	}
 }
@@ -64,4 +75,20 @@ func Partition(args []string) (files []string, dirs []string) {
 	sort.Strings(files)
 	sort.Strings(dirs)
 	return files, dirs
+}
+
+func printTarget(w io.Writer, useColor bool, info os.FileInfo) {
+	name := info.Name() + "\n"
+	if !useColor {
+		io.WriteString(w, name)
+		return
+	}
+
+	if info.IsDir() {
+		blue.ColorPrint(w, name)
+	} else if info.Mode().IsRegular() && info.Mode()&0111 != 0 {
+		green.ColorPrint(w, name)
+	} else {
+		io.WriteString(w, name)
+	}
 }
