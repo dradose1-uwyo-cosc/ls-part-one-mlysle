@@ -23,8 +23,8 @@ func SimpleLS(w io.Writer, args []string, useColor bool) {
 		printTarget(w, useColor, info)
 	}
 
-	if len(dirs) > 0 {
-		w.Write([]byte("\n"))
+	if len(dirs) > 0 && len(files) > 0 {
+		io.WriteString(w, "\n")
 	}
 
 	multipleDirs := len(dirs) > 1
@@ -43,7 +43,9 @@ func SimpleLS(w io.Writer, args []string, useColor bool) {
 		}
 
 		for _, tgt := range dirFilter(tgts) {
-			info, err := tgt.Info()
+			// info, err := tgt.Info()
+			path := filepath.Join(dir, tgt.Name())
+			info, err := os.Lstat(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Fprintf: %v\n", err)
 				continue
